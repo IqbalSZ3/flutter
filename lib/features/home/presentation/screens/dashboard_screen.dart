@@ -1,4 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/enums/enums.dart';
@@ -10,6 +12,8 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../transactions/data/models/transaction_model.dart';
 import '../../../transactions/presentation/bloc/transaction_bloc.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../../../../core/widgets/animated_scale_button.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -43,7 +47,7 @@ class DashboardScreen extends StatelessWidget {
                         onSeeAll: () => context.push('/transactions'), seeAllLabel: context.tr('see_all')),
                     const SizedBox(height: AppSpacing.sm),
                     _buildRecentTransactions(context),
-                  ],
+                  ].animate(interval: 50.ms).fade(duration: 400.ms, curve: Curves.easeOutCubic).slideY(begin: 0.1, duration: 400.ms, curve: Curves.easeOutCubic),
                 ),
               ),
             ),
@@ -62,8 +66,9 @@ class DashboardScreen extends StatelessWidget {
             CircleAvatar(
               radius: 22,
               backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-              backgroundImage:
-                  user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
+              backgroundImage: user?.photoURL != null
+                  ? CachedNetworkImageProvider(user!.photoURL!)
+                  : null,
               child: user?.photoURL == null
                   ? const Icon(Icons.person, color: AppColors.primary)
                   : null,
@@ -296,6 +301,24 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildRecentTransactions(BuildContext context) {
     return BlocBuilder<TransactionBloc, TransactionState>(
       builder: (context, state) {
+        if (state is TransactionLoading) {
+          return Column(
+            children: List.generate(3, (index) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Shimmer.fromColors(
+                baseColor: AppColors.surfaceMuted,
+                highlightColor: AppColors.surface,
+                child: Container(
+                  height: 68,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  ),
+                ),
+              ),
+            )),
+          );
+        }
         if (state is TransactionLoaded && state.transactions.isNotEmpty) {
           final recent = state.transactions.take(5).toList();
           return Column(
@@ -349,14 +372,16 @@ class _RecentTransactionTile extends StatelessWidget {
     final isExpense = transaction.type == TransactionType.expense;
     final color = isExpense ? AppColors.expense : AppColors.income;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        border: Border.all(color: AppColors.divider, width: 1),
-      ),
-      child: Row(
+    return AnimatedScaleButton(
+      onTap: () {}, // Add touch feedback
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          border: Border.all(color: AppColors.divider, width: 1),
+        ),
+        child: Row(
         children: [
           Container(
             width: 38,
@@ -391,6 +416,7 @@ class _RecentTransactionTile extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

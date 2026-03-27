@@ -4,6 +4,7 @@ abstract class TransactionRepository {
   Stream<List<TransactionModel>> watchTransactions({
     DateTime? startDate,
     DateTime? endDate,
+    int limit = 100,
   });
   Future<TransactionModel> addTransaction(TransactionModel transaction);
   Future<void> updateTransaction(TransactionModel transaction);

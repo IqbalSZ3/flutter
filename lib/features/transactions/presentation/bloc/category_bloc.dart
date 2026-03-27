@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/categories.dart';
 import '../../../../core/constants/firestore_paths.dart';
 import '../../../../core/enums/enums.dart';
+import '../../../../core/errors/error_mapper.dart';
 import '../../data/models/category_model.dart';
 
 // Events
@@ -22,6 +23,13 @@ class CategoryAdded extends CategoryEvent {
   const CategoryAdded({required this.name, required this.type, this.icon});
   @override
   List<Object?> get props => [name, type, icon];
+}
+
+class CategoryUpdated extends CategoryEvent {
+  final CategoryModel category;
+  const CategoryUpdated(this.category);
+  @override
+  List<Object?> get props => [category];
 }
 
 class CategoryDeleted extends CategoryEvent {
@@ -74,6 +82,7 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
         super(CategoryInitial()) {
     on<CategoryStarted>(_onStarted);
     on<CategoryAdded>(_onAdded);
+    on<CategoryUpdated>(_onUpdated);
     on<CategoryDeleted>(_onDeleted);
   }
 
@@ -119,7 +128,17 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
       await _collection.add(model.toFirestore());
       add(CategoryStarted()); // Reload
     } catch (e) {
-      emit(CategoryError(e.toString()));
+      emit(CategoryError(ErrorMapper.toUserMessage(e)));
+    }
+  }
+
+  Future<void> _onUpdated(
+      CategoryUpdated event, Emitter<CategoryState> emit) async {
+    try {
+      await _collection.doc(event.category.id).update(event.category.toFirestore());
+      add(CategoryStarted()); // Reload
+    } catch (e) {
+      emit(CategoryError(ErrorMapper.toUserMessage(e)));
     }
   }
 
@@ -129,7 +148,7 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
       await _collection.doc(event.id).delete();
       add(CategoryStarted()); // Reload
     } catch (e) {
-      emit(CategoryError(e.toString()));
+      emit(CategoryError(ErrorMapper.toUserMessage(e)));
     }
   }
 }

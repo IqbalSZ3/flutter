@@ -1,11 +1,16 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/locale/app_strings.dart';
 import '../../../../core/locale/locale_cubit.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../app/routes.dart';
+import '../../../../core/services/export_service.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../transactions/presentation/bloc/transaction_bloc.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -39,13 +44,24 @@ class SettingsScreen extends StatelessWidget {
             icon: Icons.category_rounded,
             title: context.tr('categories'),
             subtitle: context.tr('manage_categories'),
-            onTap: () => _showCategoriesSheet(context),
+            onTap: () => context.push(AppRoutes.manageCategories),
           ),
           _buildSettingsTile(
             icon: Icons.savings_rounded,
             title: context.tr('savings_goals'),
             subtitle: context.tr('savings_goals_subtitle'),
-            onTap: () => _showSavingsGoalsSheet(context),
+            onTap: () => context.push(AppRoutes.savingsGoals),
+          ),
+          _buildSettingsTile(
+            icon: Icons.download_rounded,
+            title: context.tr('export_data'),
+            subtitle: context.tr('export_data_subtitle'),
+            onTap: () async {
+              final state = context.read<TransactionBloc>().state;
+              if (state is TransactionLoaded) {
+                await ExportService.exportTransactionsToCSV(context, state.transactions);
+              }
+            },
           ),
           const SizedBox(height: AppSpacing.lg),
           _buildSectionTitle(context.tr('account')),
@@ -77,20 +93,24 @@ class SettingsScreen extends StatelessWidget {
             children: [
               RadioListTile<String>(
                 value: 'en',
+                // ignore: deprecated_member_use
                 groupValue: selected,
                 activeColor: AppColors.primary,
                 title: Text('English',
                     style: AppTypography.textTheme.bodyLarge
                         ?.copyWith(color: AppColors.textPrimary)),
+                // ignore: deprecated_member_use
                 onChanged: (v) => setState(() => selected = v!),
               ),
               RadioListTile<String>(
                 value: 'id',
+                // ignore: deprecated_member_use
                 groupValue: selected,
                 activeColor: AppColors.primary,
                 title: Text('Bahasa Indonesia',
                     style: AppTypography.textTheme.bodyLarge
                         ?.copyWith(color: AppColors.textPrimary)),
+                // ignore: deprecated_member_use
                 onChanged: (v) => setState(() => selected = v!),
               ),
             ],
@@ -122,151 +142,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _showCategoriesSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.background,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (ctx, controller) => Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Text(context.tr('categories'),
-                  style: AppTypography.textTheme.titleLarge
-                      ?.copyWith(color: AppColors.textPrimary)),
-            ),
-            Expanded(
-              child: ListView(
-                controller: controller,
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                children: [
-                  _buildCategorySection(context.tr('expense_categories'), [
-                    _categoryItem(context, Icons.restaurant, 'cat_food'),
-                    _categoryItem(context, Icons.directions_car, 'cat_transport'),
-                    _categoryItem(context, Icons.shopping_bag, 'cat_shopping'),
-                    _categoryItem(context, Icons.receipt_long, 'cat_bills'),
-                    _categoryItem(context, Icons.movie, 'cat_entertainment'),
-                    _categoryItem(context, Icons.local_hospital, 'cat_health'),
-                    _categoryItem(context, Icons.school, 'cat_education'),
-                    _categoryItem(context, Icons.more_horiz, 'cat_others'),
-                  ]),
-                  const SizedBox(height: AppSpacing.lg),
-                  _buildCategorySection(context.tr('income_categories'), [
-                    _categoryItem(context, Icons.work, 'cat_salary'),
-                    _categoryItem(context, Icons.laptop, 'cat_freelance'),
-                    _categoryItem(context, Icons.trending_up, 'cat_investment'),
-                    _categoryItem(context, Icons.card_giftcard, 'cat_bonus'),
-                    _categoryItem(context, Icons.more_horiz, 'cat_others'),
-                  ]),
-                  const SizedBox(height: AppSpacing.lg),
-                  Center(
-                    child: Text(
-                      context.tr('custom_categories_soon'),
-                      style: AppTypography.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.textTertiary),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategorySection(String title, List<Widget> items) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title,
-            style: AppTypography.textTheme.labelLarge
-                ?.copyWith(color: AppColors.textTertiary)),
-        const SizedBox(height: AppSpacing.sm),
-        ...items,
-      ],
-    );
-  }
-
-  Widget _categoryItem(BuildContext context, IconData icon, String key) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.primary, size: 20),
-          const SizedBox(width: 12),
-          Text(context.tr(key),
-              style: AppTypography.textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.textPrimary)),
-        ],
-      ),
-    );
-  }
-
-  void _showSavingsGoalsSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.background,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Icon(Icons.savings_rounded,
-                size: 64, color: AppColors.primary.withValues(alpha: 0.5)),
-            const SizedBox(height: AppSpacing.md),
-            Text(context.tr('savings_goals_title'),
-                style: AppTypography.textTheme.titleLarge
-                    ?.copyWith(color: AppColors.textPrimary)),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              context.tr('savings_goals_description'),
-              textAlign: TextAlign.center,
-              style: AppTypography.textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.textTertiary),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-          ],
-        ),
-      ),
-    );
-  }
 
   void _showSignOutConfirmation(BuildContext context) {
     showDialog(
@@ -317,7 +192,7 @@ class SettingsScreen extends StatelessWidget {
                 radius: 28,
                 backgroundColor: AppColors.primary.withValues(alpha: 0.2),
                 backgroundImage: user?.photoURL != null
-                    ? NetworkImage(user!.photoURL!)
+                    ? CachedNetworkImageProvider(user!.photoURL!)
                     : null,
                 child: user?.photoURL == null
                     ? const Icon(Icons.person,

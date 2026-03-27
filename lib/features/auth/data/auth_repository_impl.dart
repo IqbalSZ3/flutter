@@ -33,8 +33,6 @@ class AuthRepositoryImpl implements AuthRepository {
           await _firebaseAuth.signInWithCredential(credential);
       return userCredential.user;
     } catch (e) {
-      // ignore: avoid_print
-      print('Google Sign-In Error: $e');
       rethrow;
     }
   }

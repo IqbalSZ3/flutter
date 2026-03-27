@@ -11,7 +11,8 @@ import '../../data/models/installment_model.dart';
 import '../bloc/installment_bloc.dart';
 
 class AddInstallmentScreen extends StatefulWidget {
-  const AddInstallmentScreen({super.key});
+  final InstallmentModel? existing;
+  const AddInstallmentScreen({super.key, this.existing});
 
   @override
   State<AddInstallmentScreen> createState() => _AddInstallmentScreenState();
@@ -24,10 +25,25 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
   final _interestController = TextEditingController(text: '0');
   final _dueDayController = TextEditingController(text: '1');
   InstallmentProvider _provider = InstallmentProvider.shopeePay;
-  final DateTime _startDate = DateTime.now();
+  DateTime _startDate = DateTime.now();
 
   // Preview
   InstallmentModel? _preview;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existing != null) {
+      _nameController.text = widget.existing!.name;
+      _amountController.text = widget.existing!.totalAmount.toString();
+      _tenureController.text = widget.existing!.tenure.toString();
+      _interestController.text = widget.existing!.interestRate.toString();
+      _dueDayController.text = widget.existing!.dueDayOfMonth.toString();
+      _provider = widget.existing!.provider;
+      _startDate = widget.existing!.startDate;
+      _updatePreview();
+    }
+  }
 
   @override
   void dispose() {
@@ -66,7 +82,7 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(context.tr('add_installment'),
+        title: Text(widget.existing != null ? context.tr('edit_installment') : context.tr('add_installment'),
             style: AppTypography.textTheme.headlineSmall
                 ?.copyWith(color: AppColors.textPrimary)),
         leading: IconButton(
@@ -289,9 +305,22 @@ class _AddInstallmentScreenState extends State<AddInstallmentScreen> {
       return;
     }
 
-    context
-        .read<InstallmentBloc>()
-        .add(InstallmentAdded(_preview!));
+    final isEdit = widget.existing != null;
+    final InstallmentModel saveModel = isEdit 
+        ? _preview!.copyWith(
+            id: widget.existing!.id,
+            paidInstallments: widget.existing!.paidInstallments,
+            remainingBalance: _preview!.totalPayable - (widget.existing!.paidInstallments * _preview!.monthlyPayment),
+            isCompleted: widget.existing!.paidInstallments >= _preview!.tenure,
+            createdAt: widget.existing!.createdAt,
+          )
+        : _preview!;
+
+    if (isEdit) {
+      context.read<InstallmentBloc>().add(InstallmentUpdated(saveModel));
+    } else {
+      context.read<InstallmentBloc>().add(InstallmentAdded(saveModel));
+    }
     Navigator.pop(context);
   }
 

@@ -20,6 +20,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
   Stream<List<TransactionModel>> watchTransactions({
     DateTime? startDate,
     DateTime? endDate,
+    int limit = 100,
   }) {
     Query query = _collection.orderBy('date', descending: true);
     if (startDate != null) {
@@ -30,6 +31,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
       query = query.where('date',
           isLessThanOrEqualTo: Timestamp.fromDate(endDate));
     }
+    query = query.limit(limit);
     return query.snapshots().map((snapshot) =>
         snapshot.docs.map((doc) => TransactionModel.fromFirestore(doc)).toList());
   }
@@ -64,8 +66,6 @@ class TransactionRepositoryImpl implements TransactionRepository {
           .toList();
     } catch (e) {
       // Fallback: query without orderBy (avoids composite index issues)
-      // ignore: avoid_print
-      print('DateRange query error: $e — retrying without orderBy');
       final snapshot = await _collection
           .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
           .where('date', isLessThanOrEqualTo: Timestamp.fromDate(end))

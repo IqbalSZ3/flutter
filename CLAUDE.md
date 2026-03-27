@@ -1,62 +1,126 @@
 # FinTrack — Personal Finance App
 
-Android-only personal finance app built with Flutter. Tracks expenses/income, manages BNPL installments (ShopeePay, GoPay Later, TikTok Pay Later), subscriptions, savings goals, and provides daily/monthly analysis. Cloud-first with Firebase, IDR currency only.
+Android-only personal finance tracker built with Flutter. Focuses on the Indonesian market: IDR currency only, supports BNPL installment tracking (ShopeePay, GoPay Later, TikTok Pay Later), subscription management, savings goals, and daily/monthly spending analysis. Cloud-first with Firebase.
+
+---
 
 ## Tech Stack
 
-- **Flutter 3.41.5** (stable), Dart SDK ^3.11.3, Android only (minSdk 23)
-- **State management**: BLoC (`flutter_bloc ^9.1.1`)
-- **Backend**: Firebase (Auth + Firestore) — project ID: `management-money-c5594`
-- **Auth**: `google_sign_in ^7.2.0` (v7 singleton API) + `firebase_auth ^6.3.0`
-- **Navigation**: `go_router ^17.1.0` with `StatefulShellRoute.indexedStack`
-- **DI**: `get_it ^9.2.1` (user-scoped registration pattern)
-- **Charts**: `fl_chart ^1.2.0`
-- **Fonts**: `google_fonts ^8.0.2` (Plus Jakarta Sans headings, DM Sans body, Space Grotesk amounts)
-- **Localization**: Custom map-based system in `core/locale/app_strings.dart` (EN/ID)
+| Layer | Library | Version |
+|-------|---------|---------|
+| Framework | Flutter (Android only) | 3.41.5 stable |
+| Language | Dart SDK | ^3.11.3 |
+| State management | `flutter_bloc` | ^9.1.1 |
+| Backend | Firebase (Auth + Firestore) | project: `management-money-c5594` |
+| Auth | `google_sign_in` + `firebase_auth` | ^7.2.0 / ^6.3.0 |
+| Navigation | `go_router` | ^17.1.0 |
+| DI | `get_it` | ^9.2.1 |
+| Charts | `fl_chart` | ^1.2.0 |
+| Image caching | `cached_network_image` | ^3.4.1 |
+| Fonts | `google_fonts` | ^8.0.2 |
+| Localization | Custom map-based (EN/ID) | — |
+
+Other dependencies in `pubspec.yaml`: `bloc`, `connectivity_plus`, `equatable`, `firebase_core`, `flutter_local_notifications`, `freezed_annotation`, `intl`, `json_annotation`, `shimmer`.
+
+---
 
 ## Architecture
 
-Feature-first Clean Architecture. Each feature has `data/`, `domain/`, `presentation/` layers.
+**Feature-first Clean Architecture.** Each feature follows `data/ → domain/ → presentation/` layering.
 
 ```
 lib/
-├── app/              # App shell, routes, root widget
+├── app/
+│   ├── app.dart              # Root widget, auth-gated BlocProvider tree
+│   ├── app_shell.dart        # Bottom nav shell (StatefulShellRoute)
+│   └── routes.dart           # GoRouter config (all named routes)
 ├── core/
-│   ├── constants/    # Categories, Firestore paths
-│   ├── enums/        # TransactionType, SavingsPeriod, InstallmentProvider, etc.
-│   ├── errors/       # Failure classes
-│   ├── locale/       # LocaleCubit + AppStrings translation map
-│   ├── theme/        # AppColors, AppTypography, AppSpacing, AppTheme (Material 3 dark)
-│   └── utils/        # CurrencyFormatter (IDR), DateUtils
-├── di/               # GetIt injection container
+│   ├── constants/            # AppCategories (pre-defined), FirestorePaths
+│   ├── enums/                # TransactionType, InstallmentProvider, SavingsPeriod, etc.
+│   ├── errors/
+│   │   ├── failures.dart     # Failure base classes (ServerFailure, AuthFailure, etc.)
+│   │   └── error_mapper.dart # Maps raw exceptions → user-friendly strings
+│   ├── locale/               # LocaleCubit, AppStrings (translation map), context.tr()
+│   ├── theme/                # AppColors, AppTypography, AppSpacing, AppTheme
+│   └── utils/                # CurrencyFormatter (IDR), DateUtils
+├── di/
+│   └── injection_container.dart  # GetIt setup — global + user-scoped deps
 ├── features/
-│   ├── auth/         # Google Sign-In → Firebase Auth
-│   ├── transactions/ # Expense + Income CRUD with categories
-│   ├── analysis/     # Daily + Monthly charts (pie, line)
-│   ├── installments/ # BNPL management with flat interest calculation
-│   ├── subscriptions/# Subscription tracking with renewal dates
-│   ├── savings/      # Savings goals with flexible periods
-│   ├── bills/        # Combined installments + subscriptions tab
-│   ├── home/         # Dashboard screen
-│   └── settings/     # Language, categories, sign out
-└── main.dart
+│   ├── auth/                 # Google Sign-In flow
+│   ├── transactions/         # Expense/Income CRUD + categories
+│   ├── analysis/             # Daily (pie) + Monthly (line + pie) charts
+│   ├── installments/         # BNPL tracker with flat-interest calculator
+│   ├── subscriptions/        # Subscription tracker with renewal dates
+│   ├── savings/              # Savings goals (BLoC + repo only, no screens yet)
+│   ├── bills/                # Combined installments + subscriptions tab
+│   ├── home/                 # Dashboard screen
+│   └── settings/             # Language toggle, categories, sign out
+└── main.dart                 # Firebase init, GoogleSignIn.instance.initialize()
 ```
+
+---
 
 ## Key Patterns & Conventions
 
-- **Firestore paths**: All user data under `users/{uid}/` — see `core/constants/firestore_paths.dart`
-- **User-scoped DI**: `registerUserDependencies(uid)` in `di/injection_container.dart` — unregisters old deps, registers new ones on auth change
-- **google_sign_in v7**: Uses `GoogleSignIn.instance` singleton. Must call `initialize(serverClientId:)` before `authenticate()`. Only `idToken` available (no `accessToken` for auth). Configured in `main.dart`.
-- **Translation**: `context.tr('key')` extension from `core/locale/app_strings.dart`. Uses `context.read<LocaleCubit>()`. Rebuilds via `BlocBuilder<LocaleCubit, Locale>` wrapping `MaterialApp.router` in `app.dart`.
-- **Currency**: Always `int` (IDR, no decimals). Format with `CurrencyFormatter.format()`.
-- **Installment calculation**: Flat interest method (Indonesian BNPL standard) — see `InstallmentModel.calculate()` factory.
-- **Theme**: Material 3 dark mode, emerald green (#00C9A7) primary, deep purple (#7C5CFC) secondary.
-- **`withOpacity` deprecated**: Use `withValues(alpha: 0.1)` instead of `withOpacity(0.1)`.
-- **Wildcard params**: Use `(_, _, _)` not `(_, __, ___)` — linter warns `unnecessary_underscores`.
-- **Firestore Timestamps**: Convert `DateTime` ↔ `Timestamp` in model `toMap()`/`fromMap()`.
+### State Management (BLoC)
+- One BLoC per feature. Events are `sealed`-style abstract classes with `Equatable`.
+- Firestore streams are subscribed in `_onStarted` handler and cancelled in `close()`.
+- Internal events (e.g. `_TransactionDataReceived`) are private with `_` prefix.
+- **Never** call `add()` from inside a BLoC handler without checking if `isClosed`.
 
-## Firestore Security Rules
+### Dependency Injection (GetIt)
+- `initDependencies()` — called once at startup for Firebase + auth singletons.
+- `registerUserDependencies(uid)` — called on every successful auth; unregisters old user deps first.
+- `_tryUnregister<T>()` — safe unregistration helper (checks `isRegistered` first).
+- **All user-scoped repos/BLoCs** (Transactions, Installments, Subscriptions, Savings, Analysis, Category) are registered here with the user's `uid`.
 
+### Firestore
+- All user data lives under `users/{uid}/` — see `FirestorePaths` constants.
+- Models implement `fromFirestore(DocumentSnapshot)` + `toFirestore()` (returns `Map<String, dynamic>`).
+- `DateTime` ↔ `Timestamp` conversion is done inside model methods, not in BLoC/repo.
+- `watchTransactions()` applies `.limit(100)` — latest 100 transactions only (pagination).
+- `watchInstallments()` applies `.orderBy('isCompleted')` server-side, then secondary sort by `nextDueDate` client-side (nulls handled as `DateTime(2099)`).
+
+### Error Handling
+- `ErrorMapper.toUserMessage(e)` in `core/errors/error_mapper.dart` — always use this before emitting error states to avoid leaking stack traces to users.
+- Matches Firebase error codes: `permission-denied`, `unavailable`, `network-request-failed`, `unauthenticated`, etc.
+- All BLoCs already use `ErrorMapper`. Do not use `e.toString()` directly in `emit(XxxError(...))`.
+
+### Navigation (GoRouter)
+- Routes are static constants in `AppRoutes`.
+- Object passing uses `state.extra` with `is` type check (not force cast): `if (extra is! MyModel) return errorScaffold`.
+- Auth redirect is handled in `GoRouter.redirect` callback — no need for manual pushes on auth change.
+
+### UI Conventions
+- **Currency**: `int` (IDR, no decimals). Display with `CurrencyFormatter.format()` or `formatCompact()`.
+- **`withOpacity` is deprecated**: Use `color.withValues(alpha: 0.x)` instead.
+- **Wildcard params**: Use `(_, _, _)` not `(_, __, ___)` (linter: `unnecessary_underscores`).
+- **Computationally expensive StatelessWidgets** (sort, fold, map on large data): Convert to `StatefulWidget` and cache in `didUpdateWidget` — see `_ExpensePieChart` and `_SpendingTrendChart` in `analysis_screen.dart` as reference.
+- **Network images**: Always use `CachedNetworkImageProvider` (not plain `NetworkImage`) for any user-uploaded photos.
+- **No `print()`**: Use proper error handling/`ErrorMapper`. All print() removed from production code.
+
+### Localization
+- `context.tr('key')` extension — reads from `LocaleCubit` via `context.read`.
+- ~140 string keys defined in `AppStrings` (EN + ID maps).
+- Locale state: `LocaleCubit` wraps a `Locale` value; rebuilt via `BlocBuilder<LocaleCubit, Locale>` in `app.dart`.
+
+### Installment Calculation
+- **Flat interest method** (Indonesian BNPL standard) — see `InstallmentModel.calculate()`.
+- Formula: `monthlyInterest = totalAmount * annualRate / 100 / 12`, `monthlyPayment = ceil(principal/tenure) + monthlyInterest`.
+- Zero interest supported (just splits principal evenly).
+
+---
+
+## Firebase Setup
+
+- **Project ID**: `management-money-c5594`
+- **`google-services.json`**: in `android/app/` (do not commit to public repos)
+- **Web client ID** (for `serverClientId` in `main.dart`): `478855430524-lkaaaiiolnkoik4r9sujjquh9gutson1.apps.googleusercontent.com`
+- **SHA-1**: Added to Firebase Console (required for Google Sign-In)
+- **Firestore mode**: Production (security rules must be published — see below)
+
+### Firestore Security Rules
+Publish these in Firebase Console → Firestore → Rules:
 ```javascript
 rules_version = '2';
 service cloud.firestore {
@@ -67,44 +131,96 @@ service cloud.firestore {
   }
 }
 ```
+> ⚠️ **If rules are not published**, all Firestore reads/writes silently fail. Streams show "loading" forever. This is the #1 thing to check if data doesn't appear.
 
-**Status**: User was told to publish these rules but may not have done so. If Firestore reads/writes fail silently, check rules first.
+---
+
+## Android Build Config
+
+File: `android/app/build.gradle.kts`
+
+Critical settings that must be present:
+```kotlin
+compileOptions {
+    isCoreLibraryDesugaringEnabled = true  // required for java.time APIs
+}
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+```
+
+> ⚠️ `minSdk` is currently set to `flutter.minSdkVersion` (which may resolve below 23). If build fails with a desugaring error, manually set `minSdk = 23` in `defaultConfig`.
+
+> ⚠️ `release { signingConfig = signingConfigs.getByName("debug") }` — **must be replaced with a real keystore before Play Store submission.**
+
+---
 
 ## Features Status
 
-### Completed
-- [x] Firebase Auth with Google Sign-In (v7 API)
-- [x] Transaction CRUD (expense/income) with pre-defined + custom categories
-- [x] Daily analysis with pie chart (expense breakdown)
-- [x] Monthly analysis with line chart (spending trend) + pie charts
-- [x] Installment management with flat interest auto-calculation
-- [x] Installment detail screen with payment schedule + mark as paid
-- [x] Subscription management with renewal tracking
-- [x] Bills screen (combined installments + subscriptions tabs)
-- [x] Dashboard with balance card, quick stats, upcoming payments, recent transactions
-- [x] Settings screen (language, categories view, savings placeholder, sign out with confirmation)
-- [x] Dark theme with Material 3
-- [x] LocaleCubit for locale state + `flutter_localizations` configured in MaterialApp
+### ✅ Completed
+- Firebase Auth with Google Sign-In (v7 API — `GoogleSignIn.instance.authenticate()`)
+- Transaction CRUD (expense/income) with pre-defined + custom categories
+- Daily analysis — pie chart (expense breakdown by category)
+- Monthly analysis — line chart (spending trend) + pie charts (income + expense breakdown)
+- Installment management — flat interest auto-calculation, payment schedule, mark as paid
+- Installment detail screen with full payment schedule
+- Subscription management — renewal date tracking
+- Bills screen — combined installments + subscriptions in tabs
+- Dashboard — balance card, quick stats, upcoming payments, recent transactions (last 5)
+- Settings screen — language toggle (EN/ID), categories list, sign out with confirmation dialog
+- Dark theme (Material 3) — emerald green primary (#00C9A7), deep purple secondary (#7C5CFC)
+- Localization infrastructure — `LocaleCubit`, `AppStrings`, `context.tr()` extension
 
-### Work in Progress
-- [ ] **Localization (EN/ID)**: Translation system created (`AppStrings` + `context.tr()`), ~140 string keys defined. **Batch 1 done** (app_shell, login, dashboard, analysis, bills screens translated). **Remaining**: transaction screens, installment screens, subscription screen, settings screen need `context.tr()` calls applied.
+### 🔄 Work in Progress
 
-### Not Yet Built
-- [ ] Savings goals screens (add/detail) — only BLoC + repository + model exist
-- [ ] Category management screen (add/edit/delete custom categories)
-- [ ] Notification scheduling (installment due dates, subscription renewals)
-- [ ] Edit/delete transaction
-- [ ] Edit/delete installment/subscription
-- [ ] Data export
-- [ ] Shimmer loading states
+#### Localization (EN/ID)
+~140 string keys defined in `AppStrings`. Status by screen:
+- ✅ `app_shell`, `login_screen`, `dashboard_screen`, `analysis_screen`, `bills_screen` — translated
+- ❌ `transaction screens` (list, add), `installment screens` (add, detail), `add_subscription_screen`, `settings_screen` — hardcoded strings still need replacing with `context.tr()`
 
-## Known Issues
+### ❌ Not Yet Built (Next Steps)
+- **Savings goals screens** — `SavingsBloc` + `SavingsRepository` + `SavingsGoalModel` exist, but no UI (add/detail screens). Wire up in `settings_screen.dart` or create standalone tab.
+- **Edit/delete transaction** — only Add exists. Need edit screen + swipe-to-delete in `TransactionListScreen`.
+- **Edit/delete installment / subscription** — only Add and Detail exist.
+- **Category management screen** — add/edit/delete custom categories. `CategoryBloc` exists. Settings screen has a placeholder tap handler.
+- **Notification scheduling** — `flutter_local_notifications` is in pubspec but unused. Need to schedule: installment due dates, subscription renewals.
+- **Data export** — CSV/PDF export of transactions.
+- **Shimmer loading states** — `shimmer` package is in pubspec but unused. Replace `CircularProgressIndicator` screens with shimmer skeletons.
+- **Offline support** — currently requires internet. No local cache (Hive/SQLite). Firestore offline persistence could be enabled as a quick win.
+- **Firebase Crashlytics** — no crash reporting. Add before production.
 
-1. **Firestore security rules may not be published** — if streams error silently, installments/subscriptions show loading forever. Installment stream has `onError` fallback added, but root cause is missing rules.
-2. **Login screen overflow** — `_FeatureRow` Row can overflow by ~1.6px on narrow screens. Needs `Flexible`/`Expanded` wrapping.
-3. **Analysis monthly data stale on first view** — Fixed by re-dispatching `AnalysisMonthChanged` on tab switch (`_onTabChanged` in analysis_screen.dart). If still stale, may need stream-based approach instead of one-shot fetch.
-4. **`build.gradle.kts` minSdk reverts** — A linter/tool keeps reverting `minSdk = 23` back to `flutter.minSdkVersion`. If build fails with desugaring error, check `android/app/build.gradle.kts` and set `minSdk = 23` + `isCoreLibraryDesugaringEnabled = true`.
-5. **Kotlin incremental cache corruption** — If build fails with `Daemon compilation failed: null` / `Storage already registered`, run `flutter clean` then rebuild.
+---
+
+## Performance Optimizations Done
+
+These were applied to prepare the app for production (branch `claude/analyze-android-performance-UDpsE`):
+
+1. **Pagination** (`transaction_repository_impl.dart`) — `watchTransactions` now applies `.limit(100)`. Prevents loading unbounded records. `limit` param is configurable (default 100).
+2. **Google icon offline** (`login_screen.dart`) — Replaced `Image.network(gstatic.com/...)` with local `_GoogleIcon` widget (white circle + blue "G"). No network call on auth screen.
+3. **CachedNetworkImageProvider** (`dashboard_screen.dart`, `settings_screen.dart`) — Profile photo uses cache; no re-download on every rebuild.
+4. **Chart computation cache** (`analysis_screen.dart`) — `_ExpensePieChart` and `_SpendingTrendChart` converted to `StatefulWidget`. Sort/fold/reduce computed once in `initState` + `didUpdateWidget`, not on every `build()`.
+5. **Server-side ordering** (`installment_repository_impl.dart`) — Added `.orderBy('isCompleted')` to Firestore query; Firestore pre-sorts active installments before completed ones.
+6. **No print() in release** — Removed all `print()` statements from blocs and repositories.
+7. **ErrorMapper** (`core/errors/error_mapper.dart`) — All BLoC error handlers now use `ErrorMapper.toUserMessage(e)` instead of `e.toString()`.
+8. **Safe router cast** (`routes.dart`) — `installmentDetail` route uses `is!` type guard instead of force `as` cast.
+
+---
+
+## Known Issues & Gotchas
+
+| # | Issue | Location | Workaround |
+|---|-------|----------|------------|
+| 1 | **Firestore rules not published** | Firebase Console | Publish rules (see above). Without this, all streams silently fail. |
+| 2 | **Release APK uses debug signing** | `build.gradle.kts:39` | Must create a release keystore before Play Store submission. |
+| 3 | **`minSdk` keeps reverting** | `build.gradle.kts:29` | A linter reverts `minSdk = 23` to `flutter.minSdkVersion`. If build fails, manually set `minSdk = 23`. |
+| 4 | **Login screen overflow** | `login_screen.dart` | `_FeatureRow` Row can overflow ~1.6px on narrow screens. Wrap text with `Flexible`. |
+| 5 | **Analysis monthly data stale on first view** | `analysis_screen.dart` | Mitigated by re-dispatching `AnalysisMonthChanged` on tab switch. May need stream-based approach if issue recurs. |
+| 6 | **Kotlin incremental cache corruption** | Android build | Run `flutter clean && flutter pub get` if build fails with `Daemon compilation failed: null` / `Storage already registered`. |
+| 7 | **`isCompleted` orderBy Firestore index** | `installment_repository_impl.dart` | Firestore auto-creates single-field indexes; if stream errors on first run, check Logcat for index creation link. |
+| 8 | **No offline support** | All features | App shows empty/loading on no network. Quick fix: enable Firestore offline persistence in `main.dart` via `FirebaseFirestore.instance.settings`. |
+| 9 | **Auth try/catch in `auth_repository_impl.dart`** | `auth_repository_impl.dart` | The `catch(e) { rethrow; }` block is a no-op. Can be simplified by removing the try/catch entirely. Minor cleanup. |
+
+---
 
 ## Build & Run
 
@@ -112,28 +228,23 @@ service cloud.firestore {
 # Run on connected Android device
 flutter run -d <device_id>
 
-# Clean build (fixes most build errors)
-flutter clean && flutter pub get && flutter run -d <device_id>
-
-# List devices
+# List available devices
 flutter devices
 
-# Check for analysis issues
+# Clean build (fixes most build/cache errors)
+flutter clean && flutter pub get && flutter run -d <device_id>
+
+# Check for Dart analysis issues before committing
 flutter analyze
+
+# Run in release mode (uses debug signing — see Known Issues)
+flutter run --release -d <device_id>
 ```
 
-## Firebase Setup
+---
 
-- Project: `management-money-c5594`
-- `google-services.json` in `android/app/`
-- Web client ID (for serverClientId): `478855430524-lkaaaiiolnkoik4r9sujjquh9gutson1.apps.googleusercontent.com`
-- SHA-1 fingerprint added to Firebase Console for Google Sign-In
-- Firestore in production mode (requires security rules to be published)
+## Git Branch
 
-## Android Build Config
+Active development branch: `claude/analyze-android-performance-UDpsE`
 
-- `android/app/build.gradle.kts` requires:
-  - `minSdk = 23` (not `flutter.minSdkVersion`)
-  - `isCoreLibraryDesugaringEnabled = true` in `compileOptions`
-  - `coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")` in `dependencies`
-  - `id("com.google.gms.google-services")` plugin
+Commit `3ec0e84` — performance optimizations (8 fixes applied, see section above).
