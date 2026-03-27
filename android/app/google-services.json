@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "478855430524",
+    "project_id": "management-money-c5594",
+    "storage_bucket": "management-money-c5594.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:478855430524:android:8d0a57f325aa0bed6164f9",
+        "android_client_info": {
+          "package_name": "com.iqbal.fintrack"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "478855430524-s1ab8husr8ia1d8gee58004j9k80i8hc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.iqbal.fintrack",
+            "certificate_hash": "1e12909adeff3f94f6c5a43c5402c384bdaaa6fe"
+          }
+        },
+        {
+          "client_id": "478855430524-lkaaaiiolnkoik4r9sujjquh9gutson1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbJFHWeahyLcQw4E3gr2WWEo4BBY4JYO0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "478855430524-lkaaaiiolnkoik4r9sujjquh9gutson1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

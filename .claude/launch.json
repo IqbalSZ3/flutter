@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Flutter Dev (Debug)",
+      "runtimeExecutable": "flutter",
+      "runtimeArgs": ["run", "--debug"],
+      "port": 8080
+    },
+    {
+      "name": "Flutter Dev (Chrome/Web)",
+      "runtimeExecutable": "flutter",
+      "runtimeArgs": ["run", "-d", "chrome"],
+      "port": 8080
+    }
+  ]
+}
