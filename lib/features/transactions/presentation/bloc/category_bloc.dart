@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/categories.dart';
 import '../../../../core/constants/firestore_paths.dart';
 import '../../../../core/enums/enums.dart';
+import '../../../../core/errors/error_mapper.dart';
 import '../../data/models/category_model.dart';
 
 // Events
@@ -119,7 +120,7 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
       await _collection.add(model.toFirestore());
       add(CategoryStarted()); // Reload
     } catch (e) {
-      emit(CategoryError(e.toString()));
+      emit(CategoryError(ErrorMapper.toUserMessage(e)));
     }
   }
 
@@ -129,7 +130,7 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
       await _collection.doc(event.id).delete();
       add(CategoryStarted()); // Reload
     } catch (e) {
-      emit(CategoryError(e.toString()));
+      emit(CategoryError(ErrorMapper.toUserMessage(e)));
     }
   }
 }

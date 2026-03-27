@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/enums/enums.dart';
+import '../../../../core/errors/error_mapper.dart';
 import '../../data/models/transaction_model.dart';
 import '../../domain/transaction_repository.dart';
 
@@ -130,7 +131,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     try {
       await _repository.addTransaction(event.transaction);
     } catch (e) {
-      emit(TransactionError(e.toString()));
+      emit(TransactionError(ErrorMapper.toUserMessage(e)));
     }
   }
 
@@ -139,7 +140,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     try {
       await _repository.updateTransaction(event.transaction);
     } catch (e) {
-      emit(TransactionError(e.toString()));
+      emit(TransactionError(ErrorMapper.toUserMessage(e)));
     }
   }
 
@@ -148,7 +149,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     try {
       await _repository.deleteTransaction(event.id);
     } catch (e) {
-      emit(TransactionError(e.toString()));
+      emit(TransactionError(ErrorMapper.toUserMessage(e)));
     }
   }
 

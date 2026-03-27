@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/errors/error_mapper.dart';
 import '../../data/models/savings_goal_model.dart';
 import '../../data/savings_repository_impl.dart';
 
@@ -101,7 +102,7 @@ class SavingsBloc extends Bloc<SavingsEvent, SavingsState> {
     try {
       await _repository.addGoal(event.goal);
     } catch (e) {
-      emit(SavingsError(e.toString()));
+      emit(SavingsError(ErrorMapper.toUserMessage(e)));
     }
   }
 
@@ -110,7 +111,7 @@ class SavingsBloc extends Bloc<SavingsEvent, SavingsState> {
     try {
       await _repository.addSavings(event.goal, event.amount);
     } catch (e) {
-      emit(SavingsError(e.toString()));
+      emit(SavingsError(ErrorMapper.toUserMessage(e)));
     }
   }
 
@@ -119,7 +120,7 @@ class SavingsBloc extends Bloc<SavingsEvent, SavingsState> {
     try {
       await _repository.deleteGoal(event.id);
     } catch (e) {
-      emit(SavingsError(e.toString()));
+      emit(SavingsError(ErrorMapper.toUserMessage(e)));
     }
   }
 

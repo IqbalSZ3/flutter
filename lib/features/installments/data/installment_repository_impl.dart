@@ -16,15 +16,14 @@ class InstallmentRepository {
       _firestore.collection(FirestorePaths.installments(_uid));
 
   Stream<List<InstallmentModel>> watchInstallments() {
-    return _collection.snapshots().map((snap) {
+    // Server-side: order by isCompleted (false/active first, true/completed last)
+    // Client-side: secondary sort by nextDueDate within each group (null handling)
+    return _collection.orderBy('isCompleted').snapshots().map((snap) {
       final list = snap.docs
           .map((doc) => InstallmentModel.fromFirestore(doc))
           .toList();
-      // Sort client-side: active first, then by next due date
       list.sort((a, b) {
-        if (a.isCompleted != b.isCompleted) {
-          return a.isCompleted ? 1 : -1;
-        }
+        if (a.isCompleted != b.isCompleted) return a.isCompleted ? 1 : -1;
         final aDate = a.nextDueDate ?? DateTime(2099);
         final bDate = b.nextDueDate ?? DateTime(2099);
         return aDate.compareTo(bDate);

@@ -104,16 +104,7 @@ class LoginScreen extends StatelessWidget {
                           : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Image.network(
-                                  'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
-                                  width: 24,
-                                  height: 24,
-                                  errorBuilder: (_, _, _) => const Icon(
-                                    Icons.g_mobiledata_rounded,
-                                    size: 28,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
+                                const _GoogleIcon(),
                                 const SizedBox(width: 12),
                                 Text(
                                   context.tr('login_continue_google'),
@@ -149,6 +140,33 @@ class LoginScreen extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xl),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GoogleIcon extends StatelessWidget {
+  const _GoogleIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+      ),
+      child: const Center(
+        child: Text(
+          'G',
+          style: TextStyle(
+            color: Color(0xFF4285F4),
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            height: 1,
           ),
         ),
       ),
