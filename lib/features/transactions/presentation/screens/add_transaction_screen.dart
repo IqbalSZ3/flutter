@@ -11,7 +11,8 @@ import '../bloc/category_bloc.dart';
 import '../bloc/transaction_bloc.dart';
 
 class AddTransactionScreen extends StatefulWidget {
-  const AddTransactionScreen({super.key});
+  final TransactionModel? existing;
+  const AddTransactionScreen({super.key, this.existing});
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -26,6 +27,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   String? _selectedCategoryName;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.existing != null) {
+      _type = widget.existing!.type;
+      _amountController.text = widget.existing!.amount.toString();
+      _notesController.text = widget.existing!.notes ?? '';
+      _selectedDate = widget.existing!.date;
+      _selectedCategoryId = widget.existing!.categoryId;
+      _selectedCategoryName = widget.existing!.categoryName;
+    }
+  }
+
+  @override
   void dispose() {
     _amountController.dispose();
     _notesController.dispose();
@@ -37,7 +51,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          context.tr('add_transaction'),
+          widget.existing != null ? context.tr('edit_transaction') : context.tr('add_transaction'),
           style: AppTypography.textTheme.headlineSmall?.copyWith(
             color: AppColors.textPrimary,
           ),
@@ -363,8 +377,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
 
     final now = DateTime.now();
+    final isEdit = widget.existing != null;
     final transaction = TransactionModel(
-      id: '',
+      id: isEdit ? widget.existing!.id : '',
       type: _type,
       amount: amount,
       categoryId: _selectedCategoryId!,
@@ -373,11 +388,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       notes: _notesController.text.trim().isEmpty
           ? null
           : _notesController.text.trim(),
-      createdAt: now,
+      createdAt: isEdit ? widget.existing!.createdAt : now,
       updatedAt: now,
     );
 
-    context.read<TransactionBloc>().add(TransactionAdded(transaction));
+    if (isEdit) {
+      context.read<TransactionBloc>().add(TransactionUpdated(transaction));
+    } else {
+      context.read<TransactionBloc>().add(TransactionAdded(transaction));
+    }
     Navigator.of(context).pop();
   }
 

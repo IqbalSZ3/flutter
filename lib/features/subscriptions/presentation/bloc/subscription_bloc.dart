@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/errors/error_mapper.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../data/models/subscription_model.dart';
 import '../../data/subscription_repository_impl.dart';
 
@@ -17,6 +18,13 @@ class SubscriptionStarted extends SubscriptionEvent {}
 class SubscriptionAdded extends SubscriptionEvent {
   final SubscriptionModel subscription;
   const SubscriptionAdded(this.subscription);
+  @override
+  List<Object?> get props => [subscription];
+}
+
+class SubscriptionUpdated extends SubscriptionEvent {
+  final SubscriptionModel subscription;
+  const SubscriptionUpdated(this.subscription);
   @override
   List<Object?> get props => [subscription];
 }
@@ -76,6 +84,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         super(SubscriptionInitial()) {
     on<SubscriptionStarted>(_onStarted);
     on<SubscriptionAdded>(_onAdded);
+    on<SubscriptionUpdated>(_onUpdated);
     on<SubscriptionDeleted>(_onDeleted);
     on<_SubscriptionDataReceived>(_onDataReceived);
   }
@@ -97,6 +106,15 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     }
   }
 
+  Future<void> _onUpdated(
+      SubscriptionUpdated event, Emitter<SubscriptionState> emit) async {
+    try {
+      await _repository.updateSubscription(event.subscription);
+    } catch (e) {
+      emit(SubscriptionError(ErrorMapper.toUserMessage(e)));
+    }
+  }
+
   Future<void> _onDeleted(
       SubscriptionDeleted event, Emitter<SubscriptionState> emit) async {
     try {
@@ -108,6 +126,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
   void _onDataReceived(
       _SubscriptionDataReceived event, Emitter<SubscriptionState> emit) {
+    NotificationService().scheduleSubscriptions(event.subscriptions);
     emit(SubscriptionLoaded(event.subscriptions));
   }
 

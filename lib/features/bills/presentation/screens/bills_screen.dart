@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/locale/app_strings.dart';
@@ -10,35 +11,61 @@ import '../../../installments/data/models/installment_model.dart';
 import '../../../installments/presentation/bloc/installment_bloc.dart';
 import '../../../subscriptions/data/models/subscription_model.dart';
 import '../../../subscriptions/presentation/bloc/subscription_bloc.dart';
+import '../../../../app/app_shell.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../../../../core/widgets/animated_scale_button.dart';
 
-class BillsScreen extends StatelessWidget {
+class BillsScreen extends StatefulWidget {
   const BillsScreen({super.key});
 
   @override
+  State<BillsScreen> createState() => _BillsScreenState();
+}
+
+class _BillsScreenState extends State<BillsScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (!mounted) return;
+      billsTabNotifier.value = _tabController.index;
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(context.tr('bills'),
-              style: AppTypography.textTheme.headlineMedium
-                  ?.copyWith(color: AppColors.textPrimary)),
-          bottom: TabBar(
-            indicatorColor: AppColors.primary,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.textTertiary,
-            tabs: [
-              Tab(text: context.tr('installments')),
-              Tab(text: context.tr('subscriptions')),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            _InstallmentsTab(),
-            _SubscriptionsTab(),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(context.tr('bills'),
+            style: AppTypography.textTheme.headlineMedium
+                ?.copyWith(color: AppColors.textPrimary)),
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: AppColors.primary,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textTertiary,
+          tabs: [
+            Tab(text: context.tr('installments')),
+            Tab(text: context.tr('subscriptions')),
           ],
         ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _InstallmentsTab(),
+          _SubscriptionsTab(),
+        ],
       ),
     );
   }
@@ -85,13 +112,14 @@ class _InstallmentsTab extends StatelessWidget {
                   separatorBuilder: (_, _) =>
                       const SizedBox(height: AppSpacing.sm),
                   itemBuilder: (context, i) =>
-                      _InstallmentTile(installment: state.installments[i]),
+                      _InstallmentTile(installment: state.installments[i])
+                          .animate(delay: (i * 50).ms).fade().slideY(begin: 0.1),
                 ),
               ),
             ],
           );
         }
-        return const Center(child: CircularProgressIndicator());
+        return _buildShimmerList();
       },
     );
   }
@@ -141,7 +169,7 @@ class _InstallmentTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final progress = installment.paidInstallments / installment.tenure;
 
-    return GestureDetector(
+    return AnimatedScaleButton(
       onTap: () => context.push('/installment-detail',
           extra: installment),
       child: Container(
@@ -272,14 +300,15 @@ class _SubscriptionsTab extends StatelessWidget {
                       const SizedBox(height: AppSpacing.sm),
                   itemBuilder: (context, i) {
                     final sub = state.subscriptions[i];
-                    return _SubscriptionTile(subscription: sub);
+                    return _SubscriptionTile(subscription: sub)
+                        .animate(delay: (i * 50).ms).fade().slideY(begin: 0.1);
                   },
                 ),
               ),
             ],
           );
         }
-        return const Center(child: CircularProgressIndicator());
+        return _buildShimmerList();
       },
     );
   }
@@ -299,14 +328,16 @@ class _SubscriptionTile extends StatelessWidget {
             ? AppColors.warning
             : AppColors.textTertiary;
 
-    return Container(
-      padding: AppSpacing.cardPadding,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Row(
+    return AnimatedScaleButton(
+      onTap: () => context.push('/add-subscription', extra: subscription),
+      child: Container(
+        padding: AppSpacing.cardPadding,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Row(
         children: [
           Container(
             width: 42,
@@ -343,6 +374,26 @@ class _SubscriptionTile extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
+}
+
+Widget _buildShimmerList() {
+  return ListView.separated(
+    padding: const EdgeInsets.all(AppSpacing.md),
+    itemCount: 5,
+    separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+    itemBuilder: (_, _) => Shimmer.fromColors(
+      baseColor: AppColors.surfaceMuted,
+      highlightColor: AppColors.surface,
+      child: Container(
+        height: 100,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        ),
+      ),
+    ),
+  );
 }

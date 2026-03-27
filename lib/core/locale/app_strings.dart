@@ -182,6 +182,48 @@ class AppStrings {
 
     // ── Shared ──
     'loading': {'en': 'Loading...', 'id': 'Memuat...'},
+    'delete': {'en': 'Delete', 'id': 'Hapus'},
+    'confirm': {'en': 'Confirm', 'id': 'Konfirmasi'},
+    'active': {'en': 'active', 'id': 'aktif'},
+    'completed': {'en': 'Completed', 'id': 'Selesai'},
+    'remaining': {'en': 'Remaining', 'id': 'Sisa'},
+    'of': {'en': 'of', 'id': 'dari'},
+    'suggested': {'en': 'Suggested', 'id': 'Disarankan'},
+    'days': {'en': 'days', 'id': 'hari'},
+
+    // ── Savings Goals Screens ──
+    'no_savings_goals': {'en': 'No savings goals yet', 'id': 'Belum ada target tabungan'},
+    'no_savings_goals_subtitle': {'en': 'Tap the button below to create\nyour first savings goal', 'id': 'Ketuk tombol di bawah untuk membuat\ntarget tabungan pertama Anda'},
+    'add_savings_goal': {'en': 'Add Goal', 'id': 'Tambah Target'},
+    'savings_overview': {'en': 'Savings Overview', 'id': 'Ringkasan Tabungan'},
+    'total_saved': {'en': 'Saved', 'id': 'Tersimpan'},
+    'total_target': {'en': 'Target', 'id': 'Target'},
+    'goals_count': {'en': 'Goals', 'id': 'Target'},
+    'of_target': {'en': 'of target', 'id': 'dari target'},
+    'active_goals': {'en': 'Active Goals', 'id': 'Target Aktif'},
+    'completed_goals': {'en': 'Completed', 'id': 'Selesai'},
+    'period_weekly': {'en': 'Weekly', 'id': 'Mingguan'},
+    'period_monthly': {'en': 'Monthly', 'id': 'Bulanan'},
+    'period_yearly': {'en': 'Yearly', 'id': 'Tahunan'},
+    'period_custom': {'en': 'Custom', 'id': 'Kustom'},
+    // Add savings goal screen
+    'goal_name': {'en': 'Goal Name', 'id': 'Nama Target'},
+    'goal_name_hint': {'en': 'e.g. New Laptop, Emergency Fund', 'id': 'contoh: Laptop Baru, Dana Darurat'},
+    'target_amount_idr': {'en': 'Target Amount (IDR)', 'id': 'Jumlah Target (IDR)'},
+    'saving_period': {'en': 'Saving Period', 'id': 'Periode Menabung'},
+    'target_date': {'en': 'Target Date', 'id': 'Tanggal Target'},
+    'suggested_saving': {'en': 'Suggested saving per period', 'id': 'Saran tabungan per periode'},
+    'save_savings_goal': {'en': 'Create Goal', 'id': 'Buat Target'},
+    // Savings goal detail screen
+    'amount_saved': {'en': 'Amount Saved', 'id': 'Jumlah Tersimpan'},
+    'days_left': {'en': 'Days Left', 'id': 'Sisa Hari'},
+    'deadline_passed': {'en': 'Deadline passed', 'id': 'Deadline terlewati'},
+    'save_per_period': {'en': 'Save Per Period', 'id': 'Tabungan Per Periode'},
+    'add_savings': {'en': 'Add Money', 'id': 'Tambah Tabungan'},
+    'goal_completed_congrats': {'en': 'Goal achieved! Congratulations! 🎉', 'id': 'Target tercapai! Selamat! 🎉'},
+    'confirm_top_up': {'en': 'Confirm', 'id': 'Konfirmasi'},
+    'delete_goal': {'en': 'Delete Goal', 'id': 'Hapus Target'},
+    'delete_goal_confirm': {'en': 'Are you sure you want to delete this savings goal?', 'id': 'Apakah Anda yakin ingin menghapus target tabungan ini?'},
   };
 
   /// Get month name by index (1-12)

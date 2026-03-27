@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/enums/enums.dart';
 import '../../../../core/locale/app_strings.dart';
@@ -8,6 +10,8 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../data/models/transaction_model.dart';
 import '../bloc/transaction_bloc.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../../../../core/widgets/animated_scale_button.dart';
 
 class TransactionListScreen extends StatelessWidget {
   const TransactionListScreen({super.key});
@@ -26,7 +30,7 @@ class TransactionListScreen extends StatelessWidget {
       body: BlocBuilder<TransactionBloc, TransactionState>(
         builder: (context, state) {
           if (state is TransactionLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return _buildShimmerList();
           }
           if (state is TransactionLoaded) {
             if (state.transactions.isEmpty) {
@@ -95,7 +99,24 @@ class TransactionListScreen extends StatelessWidget {
             itemCount: transactions.length,
             separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
             itemBuilder: (context, index) {
-              return _TransactionTile(transaction: transactions[index]);
+              final transaction = transactions[index];
+              return Dismissible(
+                key: Key(transaction.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  color: AppColors.expense,
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+                ),
+                onDismissed: (_) {
+                  context.read<TransactionBloc>().add(TransactionDeleted(transaction.id));
+                },
+                child: AnimatedScaleButton(
+                  onTap: () => context.push('/edit-transaction', extra: transaction),
+                  child: _TransactionTile(transaction: transaction),
+                ),
+              ).animate(delay: (index * 50).ms).fade().slideX(begin: 0.1);
             },
           ),
         ),
@@ -125,6 +146,25 @@ class TransactionListScreen extends StatelessWidget {
           label,
           style: AppTypography.textTheme.labelMedium?.copyWith(
             color: isSelected ? AppColors.primary : AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShimmerList() {
+    return ListView.separated(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      itemCount: 6,
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+      itemBuilder: (_, _) => Shimmer.fromColors(
+        baseColor: AppColors.surfaceMuted,
+        highlightColor: AppColors.surface,
+        child: Container(
+          height: 72,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           ),
         ),
       ),

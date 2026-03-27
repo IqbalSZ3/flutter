@@ -25,6 +25,13 @@ class CategoryAdded extends CategoryEvent {
   List<Object?> get props => [name, type, icon];
 }
 
+class CategoryUpdated extends CategoryEvent {
+  final CategoryModel category;
+  const CategoryUpdated(this.category);
+  @override
+  List<Object?> get props => [category];
+}
+
 class CategoryDeleted extends CategoryEvent {
   final String id;
   const CategoryDeleted(this.id);
@@ -75,6 +82,7 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
         super(CategoryInitial()) {
     on<CategoryStarted>(_onStarted);
     on<CategoryAdded>(_onAdded);
+    on<CategoryUpdated>(_onUpdated);
     on<CategoryDeleted>(_onDeleted);
   }
 
@@ -118,6 +126,16 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
         sortOrder: 100,
       );
       await _collection.add(model.toFirestore());
+      add(CategoryStarted()); // Reload
+    } catch (e) {
+      emit(CategoryError(ErrorMapper.toUserMessage(e)));
+    }
+  }
+
+  Future<void> _onUpdated(
+      CategoryUpdated event, Emitter<CategoryState> emit) async {
+    try {
+      await _collection.doc(event.category.id).update(event.category.toFirestore());
       add(CategoryStarted()); // Reload
     } catch (e) {
       emit(CategoryError(ErrorMapper.toUserMessage(e)));

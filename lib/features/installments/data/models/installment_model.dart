@@ -139,6 +139,7 @@ class InstallmentModel extends Equatable {
     int? paidInstallments,
     DateTime? nextDueDate,
     bool? isCompleted,
+    DateTime? createdAt,
   }) {
     return InstallmentModel(
       id: id ?? this.id,
@@ -156,7 +157,7 @@ class InstallmentModel extends Equatable {
       startDate: startDate,
       nextDueDate: nextDueDate ?? this.nextDueDate,
       isCompleted: isCompleted ?? this.isCompleted,
-      createdAt: createdAt,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 

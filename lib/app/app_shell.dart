@@ -4,6 +4,11 @@ import '../core/locale/app_strings.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_typography.dart';
+import '../core/widgets/animated_scale_button.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
+// Global state to track active tab inside BillsScreen
+final ValueNotifier<int> billsTabNotifier = ValueNotifier<int>(0);
 
 class AppShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
@@ -15,7 +20,20 @@ class AppShell extends StatelessWidget {
     return Scaffold(
       body: navigationShell,
       floatingActionButton: _PremiumFab(
-        onTap: () => context.push('/add-transaction'),
+        onTap: () {
+          final currentIndex = navigationShell.currentIndex;
+          if (currentIndex == 2) {
+            // We are on Bills screen
+            if (billsTabNotifier.value == 0) {
+              context.push('/add-installment');
+            } else {
+              context.push('/add-subscription');
+            }
+          } else {
+            // Home, Analysis, Settings
+            context.push('/add-transaction');
+          }
+        },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: _buildBottomNav(context),
@@ -87,8 +105,8 @@ class AppShell extends StatelessWidget {
     required bool isSelected,
   }) {
     return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: AnimatedScaleButton(
+        scaleFactor: 0.92,
         onTap: () => navigationShell.goBranch(
           index,
           initialLocation: index == navigationShell.currentIndex,
@@ -143,8 +161,9 @@ class _PremiumFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return AnimatedScaleButton(
       onTap: onTap,
+      scaleFactor: 0.9,
       child: Container(
         width: 52,
         height: 52,
@@ -165,6 +184,7 @@ class _PremiumFab extends StatelessWidget {
           size: 26,
         ),
       ),
-    );
+    ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+     .scale(begin: const Offset(1, 1), end: const Offset(1.03, 1.03), duration: 2.seconds, curve: Curves.easeInOut);
   }
 }

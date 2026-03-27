@@ -10,7 +10,8 @@ import '../../data/models/subscription_model.dart';
 import '../bloc/subscription_bloc.dart';
 
 class AddSubscriptionScreen extends StatefulWidget {
-  const AddSubscriptionScreen({super.key});
+  final SubscriptionModel? existing;
+  const AddSubscriptionScreen({super.key, this.existing});
 
   @override
   State<AddSubscriptionScreen> createState() => _AddSubscriptionScreenState();
@@ -25,6 +26,19 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
   int _reminderDays = 3;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.existing != null) {
+      _nameController.text = widget.existing!.name;
+      _amountController.text = widget.existing!.amount.toString();
+      _notesController.text = widget.existing!.notes ?? '';
+      _cycle = widget.existing!.cycle;
+      _nextRenewal = widget.existing!.nextRenewalDate;
+      _reminderDays = widget.existing!.reminderDaysBefore ?? 3;
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _amountController.dispose();
@@ -36,13 +50,24 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(context.tr('add_subscription'),
+        title: Text(widget.existing != null ? context.tr('edit_subscription') : context.tr('add_subscription'),
             style: AppTypography.textTheme.headlineSmall
                 ?.copyWith(color: AppColors.textPrimary)),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: widget.existing != null
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.delete_outline_rounded, color: AppColors.expense),
+                  onPressed: () {
+                    context.read<SubscriptionBloc>().add(SubscriptionDeleted(widget.existing!.id));
+                    Navigator.pop(context);
+                  },
+                ),
+              ]
+            : null,
       ),
       body: SingleChildScrollView(
         padding: AppSpacing.pagePadding,
@@ -221,8 +246,9 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
       return;
     }
 
+    final isEdit = widget.existing != null;
     final sub = SubscriptionModel(
-      id: '',
+      id: isEdit ? widget.existing!.id : '',
       name: _nameController.text.trim(),
       amount: amount,
       cycle: _cycle,
@@ -231,10 +257,14 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
       notes: _notesController.text.trim().isEmpty
           ? null
           : _notesController.text.trim(),
-      createdAt: DateTime.now(),
+      createdAt: isEdit ? widget.existing!.createdAt : DateTime.now(),
     );
 
-    context.read<SubscriptionBloc>().add(SubscriptionAdded(sub));
+    if (isEdit) {
+      context.read<SubscriptionBloc>().add(SubscriptionUpdated(sub));
+    } else {
+      context.read<SubscriptionBloc>().add(SubscriptionAdded(sub));
+    }
     Navigator.pop(context);
   }
 
