@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/errors/error_mapper.dart';
 import '../../data/models/subscription_model.dart';
 import '../../data/subscription_repository_impl.dart';
 
@@ -92,7 +93,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     try {
       await _repository.addSubscription(event.subscription);
     } catch (e) {
-      emit(SubscriptionError(e.toString()));
+      emit(SubscriptionError(ErrorMapper.toUserMessage(e)));
     }
   }
 
@@ -101,7 +102,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     try {
       await _repository.deleteSubscription(event.id);
     } catch (e) {
-      emit(SubscriptionError(e.toString()));
+      emit(SubscriptionError(ErrorMapper.toUserMessage(e)));
     }
   }
 

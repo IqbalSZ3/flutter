@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -62,8 +63,9 @@ class DashboardScreen extends StatelessWidget {
             CircleAvatar(
               radius: 22,
               backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-              backgroundImage:
-                  user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
+              backgroundImage: user?.photoURL != null
+                  ? CachedNetworkImageProvider(user!.photoURL!)
+                  : null,
               child: user?.photoURL == null
                   ? const Icon(Icons.person, color: AppColors.primary)
                   : null,

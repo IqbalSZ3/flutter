@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/errors/error_mapper.dart';
 import '../../data/installment_repository_impl.dart';
 import '../../data/models/installment_model.dart';
 
@@ -94,11 +95,7 @@ class InstallmentBloc extends Bloc<InstallmentEvent, InstallmentState> {
     _subscription?.cancel();
     _subscription = _repository.watchInstallments().listen(
       (data) => add(_InstallmentDataReceived(data)),
-      onError: (error) {
-        // ignore: avoid_print
-        print('Installment stream error: $error');
-        add(const _InstallmentDataReceived([]));
-      },
+      onError: (_) => add(const _InstallmentDataReceived([])),
     );
   }
 
@@ -107,7 +104,7 @@ class InstallmentBloc extends Bloc<InstallmentEvent, InstallmentState> {
     try {
       await _repository.addInstallment(event.installment);
     } catch (e) {
-      emit(InstallmentError(e.toString()));
+      emit(InstallmentError(ErrorMapper.toUserMessage(e)));
     }
   }
 
@@ -116,7 +113,7 @@ class InstallmentBloc extends Bloc<InstallmentEvent, InstallmentState> {
     try {
       await _repository.markPayment(event.installment);
     } catch (e) {
-      emit(InstallmentError(e.toString()));
+      emit(InstallmentError(ErrorMapper.toUserMessage(e)));
     }
   }
 
@@ -125,7 +122,7 @@ class InstallmentBloc extends Bloc<InstallmentEvent, InstallmentState> {
     try {
       await _repository.deleteInstallment(event.id);
     } catch (e) {
-      emit(InstallmentError(e.toString()));
+      emit(InstallmentError(ErrorMapper.toUserMessage(e)));
     }
   }
 

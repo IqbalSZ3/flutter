@@ -93,7 +93,12 @@ class AppRoutes {
         GoRoute(
           path: installmentDetail,
           builder: (context, state) {
-            final installment = state.extra! as InstallmentModel;
+            final installment = state.extra;
+            if (installment is! InstallmentModel) {
+              return const Scaffold(
+                body: Center(child: Text('Invalid navigation data.')),
+              );
+            }
             return InstallmentDetailScreen(installment: installment);
           },
         ),

@@ -143,9 +143,7 @@ class AnalysisBloc extends Bloc<AnalysisEvent, AnalysisState> {
       final transactions =
           await _repository.getTransactionsByDateRange(start, end);
       emit(state.copyWith(dailyTransactions: transactions, isLoading: false));
-    } catch (e) {
-      // ignore: avoid_print
-      print('Daily analysis error: $e');
+    } catch (_) {
       emit(state.copyWith(isLoading: false));
     }
   }
@@ -159,9 +157,7 @@ class AnalysisBloc extends Bloc<AnalysisEvent, AnalysisState> {
       final transactions =
           await _repository.getTransactionsByDateRange(start, end);
       emit(state.copyWith(monthlyTransactions: transactions, isLoading: false));
-    } catch (e) {
-      // ignore: avoid_print
-      print('Monthly analysis error: $e');
+    } catch (_) {
       emit(state.copyWith(isLoading: false));
     }
   }

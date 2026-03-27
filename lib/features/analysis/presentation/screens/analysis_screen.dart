@@ -335,11 +335,16 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _ExpensePieChart extends StatelessWidget {
+class _ExpensePieChart extends StatefulWidget {
   final Map<String, int> data;
   final bool isIncome;
   const _ExpensePieChart({required this.data, this.isIncome = false});
 
+  @override
+  State<_ExpensePieChart> createState() => _ExpensePieChartState();
+}
+
+class _ExpensePieChartState extends State<_ExpensePieChart> {
   static const _colors = [
     AppColors.expense,
     AppColors.income,
@@ -351,12 +356,29 @@ class _ExpensePieChart extends StatelessWidget {
     Color(0xFF7A8A9B), // slate blue
   ];
 
+  late List<MapEntry<String, int>> _entries;
+  late int _total;
+
+  @override
+  void initState() {
+    super.initState();
+    _computeData();
+  }
+
+  @override
+  void didUpdateWidget(_ExpensePieChart old) {
+    super.didUpdateWidget(old);
+    if (old.data != widget.data) _computeData();
+  }
+
+  void _computeData() {
+    _entries = widget.data.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    _total = _entries.fold(0, (s, e) => s + e.value);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final entries = data.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    final total = entries.fold(0, (s, e) => s + e.value);
-
     return Row(
       children: [
         Expanded(
@@ -364,8 +386,8 @@ class _ExpensePieChart extends StatelessWidget {
             PieChartData(
               sectionsSpace: 2,
               centerSpaceRadius: 36,
-              sections: entries.asMap().entries.map((e) {
-                final pct = (e.value.value / total * 100);
+              sections: _entries.asMap().entries.map((e) {
+                final pct = (e.value.value / _total * 100);
                 return PieChartSectionData(
                   color: _colors[e.key % _colors.length],
                   value: e.value.value.toDouble(),
@@ -383,7 +405,7 @@ class _ExpensePieChart extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: entries.asMap().entries.map((e) {
+            children: _entries.asMap().entries.map((e) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 3),
                 child: Row(
@@ -416,19 +438,44 @@ class _ExpensePieChart extends StatelessWidget {
   }
 }
 
-class _SpendingTrendChart extends StatelessWidget {
+class _SpendingTrendChart extends StatefulWidget {
   final Map<int, int> data;
   const _SpendingTrendChart({required this.data});
 
   @override
-  Widget build(BuildContext context) {
-    final maxY = data.values.isEmpty
+  State<_SpendingTrendChart> createState() => _SpendingTrendChartState();
+}
+
+class _SpendingTrendChartState extends State<_SpendingTrendChart> {
+  late double _maxY;
+  late List<FlSpot> _spots;
+
+  @override
+  void initState() {
+    super.initState();
+    _computeData();
+  }
+
+  @override
+  void didUpdateWidget(_SpendingTrendChart old) {
+    super.didUpdateWidget(old);
+    if (old.data != widget.data) _computeData();
+  }
+
+  void _computeData() {
+    _maxY = widget.data.values.isEmpty
         ? 100.0
-        : data.values.reduce(max).toDouble() * 1.2;
-    final spots = data.entries
+        : widget.data.values.reduce(max).toDouble() * 1.2;
+    _spots = widget.data.entries
         .map((e) => FlSpot(e.key.toDouble(), e.value.toDouble()))
         .toList()
       ..sort((a, b) => a.x.compareTo(b.x));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final maxY = _maxY;
+    final spots = _spots;
 
     return LineChart(
       LineChartData(
